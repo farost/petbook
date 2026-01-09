@@ -1,0 +1,344 @@
+<div class="org-page">
+  @if (isLoading()) {
+    <div class="loading">Loading organization...</div>
+  } @else if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  } @else if (orgData()) {
+    <div class="org-container">
+      <!-- Organization Header -->
+      <div class="card org-header-card">
+        <div class="org-header">
+          <div class="org-avatar">{{ orgData()!.organization.name.charAt(0).toUpperCase() }}</div>
+          <div class="org-info">
+            <h1>{{ orgData()!.organization.name }}</h1>
+            <a routerLink="/discover" [queryParams]="{orgType: orgData()!.organization.orgType, tab: 'organizations'}" class="org-type-badge">{{ getOrgTypeLabel(orgData()!.organization.orgType) }}</a>
+            @if (orgData()!.organization.location) {
+              <p class="location">{{ orgData()!.organization.location }}</p>
+            }
+            @if (orgData()!.organization.bio) {
+              <p class="bio">{{ orgData()!.organization.bio }}</p>
+            }
+            @if (formatEstablishedDate(orgData()!.organization.establishedYear, orgData()!.organization.establishedMonth, orgData()!.organization.establishedDay)) {
+              <p class="established">Est. {{ formatEstablishedDate(orgData()!.organization.establishedYear, orgData()!.organization.establishedMonth, orgData()!.organization.establishedDay) }}</p>
+            }
+            <div class="stats">
+              <span class="stat">{{ followerCount() }} follower{{ followerCount() !== 1 ? 's' : '' }}</span>
+              <span class="stat">{{ orgData()!.pets.length }} pet{{ orgData()!.pets.length !== 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          @if (!isManager() && authService.isLoggedIn()) {
+            <button class="btn" [class.btn-primary]="!isFollowing()" [class.btn-secondary]="isFollowing()" (click)="toggleFollow()">
+              {{ isFollowing() ? 'Unfollow' : 'Follow' }}
+            </button>
+          }
+          @if (isManager()) {
+            <span class="manager-badge">You manage this organization</span>
+            <button class="btn btn-outline btn-sm" (click)="toggleEditOrg()">
+              {{ showEditOrg() ? 'Cancel' : 'Edit' }}
+            </button>
+            @if (isOwner()) {
+              <button class="btn btn-outline btn-sm btn-danger-outline" (click)="toggleTransferOrg()">
+                {{ showTransferOrg() ? 'Cancel Transfer' : 'Transfer' }}
+              </button>
+            }
+          }
+        </div>
+
+        @if (showEditOrg()) {
+          <div class="edit-org-form">
+            @if (editOrgError) {
+              <div class="error-message">{{ editOrgError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="editOrgName">Organization Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="editOrgName"
+                [(ngModel)]="editOrgName"
+                placeholder="Organization name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editOrgLocation">Location</label>
+              <input
+                type="text"
+                id="editOrgLocation"
+                [(ngModel)]="editOrgLocation"
+                placeholder="City, State"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editOrgBio">Description</label>
+              <textarea
+                id="editOrgBio"
+                [(ngModel)]="editOrgBio"
+                placeholder="Tell us about your organization"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Established Date</label>
+              <div class="birthday-inputs">
+                <select [(ngModel)]="editEstablishedYear" class="birth-year">
+                  <option [ngValue]="null">Year</option>
+                  @for (year of getYearOptions(); track year) {
+                    <option [ngValue]="year">{{ year }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="editEstablishedMonth" class="birth-month">
+                  @for (month of monthOptions; track month.value) {
+                    <option [ngValue]="month.value">{{ month.label }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="editEstablishedDay" class="birth-day" [disabled]="!editEstablishedMonth">
+                  <option [ngValue]="null">Day</option>
+                  @for (day of getDayOptions(); track day) {
+                    <option [ngValue]="day">{{ day }}</option>
+                  }
+                </select>
+              </div>
+              <span class="form-hint">Leave blank if unknown. Year only is fine.</span>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="saveOrg()"
+              [disabled]="isSavingOrg"
+            >
+              {{ isSavingOrg ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        }
+
+        @if (showTransferOrg()) {
+          <div class="transfer-org-form">
+            <h3>Transfer Organization</h3>
+            <p class="transfer-warning">Warning: Transferring ownership will give another user full control of this organization. This action cannot be undone.</p>
+
+            @if (transferError) {
+              <div class="error-message">{{ transferError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="transferSearch">Search for new owner</label>
+              <div class="search-input-wrapper">
+                <input
+                  type="text"
+                  id="transferSearch"
+                  [(ngModel)]="transferSearch"
+                  placeholder="Search by name or email..."
+                  (keyup.enter)="searchUsersForTransfer()"
+                />
+                <button type="button" class="btn btn-secondary btn-sm" (click)="searchUsersForTransfer()" [disabled]="isSearchingUsers">
+                  {{ isSearchingUsers ? 'Searching...' : 'Search' }}
+                </button>
+              </div>
+            </div>
+
+            @if (transferSearchResults().length > 0) {
+              <div class="user-search-results">
+                @for (user of transferSearchResults(); track user.id) {
+                  <button class="user-result-item" (click)="selectTransferUser(user)">
+                    <span class="user-avatar">{{ user.name.charAt(0).toUpperCase() }}</span>
+                    <div class="user-info">
+                      <span class="user-name">{{ user.name }}</span>
+                      <span class="user-email">{{ user.email }}</span>
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (selectedTransferUser) {
+              <div class="selected-user">
+                <span class="selected-label">Transfer to:</span>
+                <div class="selected-user-info">
+                  <span class="user-avatar">{{ selectedTransferUser.name.charAt(0).toUpperCase() }}</span>
+                  <span class="user-name">{{ selectedTransferUser.name }}</span>
+                  <span class="user-email">({{ selectedTransferUser.email }})</span>
+                </div>
+              </div>
+            }
+
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="transferOrg()"
+              [disabled]="isTransferring || !selectedTransferUser"
+            >
+              {{ isTransferring ? 'Transferring...' : 'Transfer Organization' }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Pets Section -->
+      <div class="card pets-card">
+        <div class="section-header">
+          <h2>Pets</h2>
+          @if (isManager()) {
+            <button class="btn btn-primary btn-sm" (click)="toggleAddPet()">
+              {{ showAddPet() ? 'Cancel' : '+ Add Pet' }}
+            </button>
+          }
+        </div>
+
+        @if (showAddPet()) {
+          <div class="add-pet-form">
+            @if (addPetError) {
+              <div class="error-message">{{ addPetError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="petName">Pet Name <span class="required">*</span></label>
+              <input type="text" id="petName" [(ngModel)]="newPetName" placeholder="Enter pet name" required />
+            </div>
+
+            <div class="form-group">
+              <label for="petSpecies">Species <span class="required">*</span></label>
+              <select id="petSpecies" [(ngModel)]="newPetSpecies">
+                @for (species of speciesOptions; track species) {
+                  <option [value]="species">{{ getSpeciesEmoji(species) }} {{ getSpeciesLabel(species) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="petBreed">Breed</label>
+              <input type="text" id="petBreed" [(ngModel)]="newPetBreed" placeholder="Enter breed" />
+            </div>
+
+            <div class="form-group">
+              <label for="petSex">Sex</label>
+              <select id="petSex" [(ngModel)]="newPetSex">
+                @for (sex of sexOptions; track sex) {
+                  <option [value]="sex">{{ getSexLabel(sex) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Birthday</label>
+              <div class="birthday-inputs">
+                <select [(ngModel)]="newPetBirthYear" class="birth-year">
+                  <option [ngValue]="null">Year</option>
+                  @for (year of getYearOptions(); track year) {
+                    <option [ngValue]="year">{{ year }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="newPetBirthMonth" class="birth-month">
+                  @for (month of monthOptions; track month.value) {
+                    <option [ngValue]="month.value">{{ month.label }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="newPetBirthDay" class="birth-day" [disabled]="!newPetBirthMonth">
+                  <option [ngValue]="null">Day</option>
+                  @for (day of getDayOptions(); track day) {
+                    <option [ngValue]="day">{{ day }}</option>
+                  }
+                </select>
+              </div>
+              <span class="form-hint">Leave blank if unknown. Year only is fine.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="petStatus">Status</label>
+              <select id="petStatus" [(ngModel)]="newPetStatus">
+                @for (status of statusOptions; track status) {
+                  <option [value]="status">{{ getStatusLabel(status) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="petBio">Bio</label>
+              <textarea id="petBio" [(ngModel)]="newPetBio" placeholder="Tell us about this pet" rows="3"></textarea>
+            </div>
+
+            <button type="button" class="btn btn-primary" (click)="addPet()" [disabled]="isAddingPet">
+              {{ isAddingPet ? 'Adding...' : 'Add Pet' }}
+            </button>
+          </div>
+        }
+
+        @if (orgData()!.pets.length === 0 && !showAddPet()) {
+          <p class="empty-message">This organization hasn't added any pets yet.</p>
+        } @else {
+          <div class="pets-list">
+            @for (pet of orgData()!.pets; track pet.id) {
+              <app-pet-card [pet]="pet" [showStatus]="true"></app-pet-card>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Feed Section (visible to managers only) -->
+      @if (isManager()) {
+        <div class="card feed-card">
+          <h2>Organization Feed</h2>
+
+          <!-- Post form with posting-as selector -->
+          <div class="post-form">
+            <div class="post-form-header">
+              <div class="post-as-selector">
+                <span class="post-as-label">Posting as:</span>
+                <button class="post-as-button" (click)="togglePostAsSelector()" type="button">
+                  <span class="post-as-avatar" [class.org]="isPostingAsOrg()">{{ getSelectedPostAsInitial() }}</span>
+                  <span class="post-as-name">{{ getSelectedPostAsName() }}</span>
+                  <span class="post-as-arrow">▼</span>
+                </button>
+                @if (showPostAsSelector()) {
+                  <div class="post-as-dropdown">
+                    <button class="post-as-option" (click)="selectPostAs('')" [class.selected]="!postAsOrgId">
+                      <span class="option-avatar">{{ authService.user()?.name?.charAt(0)?.toUpperCase() }}</span>
+                      <span class="option-name">{{ authService.user()?.name }} (You)</span>
+                    </button>
+                    <button class="post-as-option" (click)="selectPostAs(orgData()!.organization.id)" [class.selected]="postAsOrgId === orgData()!.organization.id">
+                      <span class="option-avatar org">{{ orgData()!.organization.name.charAt(0).toUpperCase() }}</span>
+                      <span class="option-name">{{ orgData()!.organization.name }}</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+            <textarea [(ngModel)]="newPostContent" placeholder="Write a post..." rows="3"></textarea>
+            <div class="image-url-input">
+              <input
+                type="url"
+                [(ngModel)]="newPostImageUrl"
+                placeholder="Image URL (optional)"
+                class="image-url-field"
+              />
+            </div>
+            <button class="btn btn-primary" (click)="createPost()" [disabled]="isPosting || !newPostContent.trim()">
+              {{ isPosting ? 'Posting...' : 'Post' }}
+            </button>
+          </div>
+
+          @if (posts().length === 0) {
+            <p class="empty-message">No posts in this organization's feed yet.</p>
+          } @else {
+            <div class="posts-list">
+              @for (post of posts(); track post.id) {
+                <app-post-item
+                  [post]="post"
+                  [showDeleteButton]="canDeletePost(post)"
+                  [showTarget]="true"
+                  (delete)="deletePost($event)"
+                ></app-post-item>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

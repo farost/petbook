@@ -1,0 +1,380 @@
+<div class="profile-page">
+  @if (isLoading()) {
+    <div class="loading">Loading profile...</div>
+  } @else if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  } @else if (profile()) {
+    <div class="profile-container">
+      <div class="card profile-card">
+        <div class="profile-header">
+          <div class="avatar">{{ profile()!.user.name.charAt(0).toUpperCase() }}</div>
+          <div class="profile-info">
+            <h1>{{ profile()!.user.name }}</h1>
+            <p class="email">{{ profile()!.user.email }}</p>
+            @if (profile()!.user.bio) {
+              <p class="bio">{{ profile()!.user.bio }}</p>
+            }
+            @if (profile()!.user.location) {
+              <p class="location">📍 {{ profile()!.user.location }}</p>
+            }
+            @if (formatUserBirthday(profile()!.user.birthYear, profile()!.user.birthMonth, profile()!.user.birthDay)) {
+              <p class="birthday">🎂 {{ formatUserBirthday(profile()!.user.birthYear, profile()!.user.birthMonth, profile()!.user.birthDay) }}</p>
+            }
+          </div>
+          <button class="btn btn-outline btn-sm" (click)="toggleEditProfile()">
+            {{ showEditProfile() ? 'Cancel' : 'Edit Profile' }}
+          </button>
+        </div>
+
+        @if (showEditProfile()) {
+          <div class="edit-profile-form">
+            @if (editProfileError) {
+              <div class="error-message">{{ editProfileError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="editName">Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="editName"
+                [(ngModel)]="editName"
+                placeholder="Your name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editLocation">Location</label>
+              <input
+                type="text"
+                id="editLocation"
+                [(ngModel)]="editLocation"
+                placeholder="City, State"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editBio">Bio</label>
+              <textarea
+                id="editBio"
+                [(ngModel)]="editBio"
+                placeholder="Tell us about yourself"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Birthday</label>
+              <div class="birthday-inputs">
+                <select [(ngModel)]="editBirthYear" class="birth-year">
+                  <option [ngValue]="null">Year</option>
+                  @for (year of getYearOptions(); track year) {
+                    <option [ngValue]="year">{{ year }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="editBirthMonth" class="birth-month">
+                  @for (month of monthOptions; track month.value) {
+                    <option [ngValue]="month.value">{{ month.label }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="editBirthDay" class="birth-day" [disabled]="!editBirthMonth">
+                  <option [ngValue]="null">Day</option>
+                  @for (day of getDayOptions(); track day) {
+                    <option [ngValue]="day">{{ day }}</option>
+                  }
+                </select>
+              </div>
+              <span class="form-hint">Leave blank if you prefer not to share.</span>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="saveProfile()"
+              [disabled]="isSavingProfile"
+            >
+              {{ isSavingProfile ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="card pets-card">
+        <div class="pets-header">
+          <h2>My Pets</h2>
+          <button class="btn btn-primary" (click)="toggleAddPet()">
+            {{ showAddPet() ? 'Cancel' : '+ Add Pet' }}
+          </button>
+        </div>
+
+        @if (showAddPet()) {
+          <div class="add-pet-form">
+            @if (addPetError) {
+              <div class="error-message">{{ addPetError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="petName">Pet Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="petName"
+                [(ngModel)]="newPetName"
+                placeholder="Enter pet name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="petSpecies">Species <span class="required">*</span></label>
+              <select id="petSpecies" [(ngModel)]="newPetSpecies">
+                @for (species of speciesOptions; track species) {
+                  <option [value]="species">{{ getSpeciesEmoji(species) }} {{ getSpeciesLabel(species) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="petBreed">Breed</label>
+              <input
+                type="text"
+                id="petBreed"
+                [(ngModel)]="newPetBreed"
+                placeholder="Enter breed"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="petSex">Sex</label>
+              <select id="petSex" [(ngModel)]="newPetSex">
+                @for (sex of sexOptions; track sex) {
+                  <option [value]="sex">{{ getSexLabel(sex) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Birthday</label>
+              <div class="birthday-inputs">
+                <select [(ngModel)]="newPetBirthYear" class="birth-year">
+                  <option [ngValue]="null">Year</option>
+                  @for (year of getPetYearOptions(); track year) {
+                    <option [ngValue]="year">{{ year }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="newPetBirthMonth" class="birth-month">
+                  @for (month of monthOptions; track month.value) {
+                    <option [ngValue]="month.value">{{ month.label }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="newPetBirthDay" class="birth-day" [disabled]="!newPetBirthMonth">
+                  <option [ngValue]="null">Day</option>
+                  @for (day of getDayOptions(); track day) {
+                    <option [ngValue]="day">{{ day }}</option>
+                  }
+                </select>
+              </div>
+              <span class="form-hint">Leave blank if unknown. Year only is fine.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="petStatus">Status</label>
+              <select id="petStatus" [(ngModel)]="newPetStatus">
+                @for (status of statusOptions; track status) {
+                  <option [value]="status">{{ getStatusLabel(status) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="petBio">Bio</label>
+              <textarea
+                id="petBio"
+                [(ngModel)]="newPetBio"
+                placeholder="Tell us about your pet"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="addPet()"
+              [disabled]="isAddingPet"
+            >
+              {{ isAddingPet ? 'Adding...' : 'Add Pet' }}
+            </button>
+          </div>
+        }
+
+        @if (profile()!.pets.length === 0 && !showAddPet()) {
+          <p class="no-pets">You haven't added any pets yet. Click "Add Pet" to get started!</p>
+        } @else {
+          <div class="pets-list">
+            @for (pet of profile()!.pets; track pet.id) {
+              <app-pet-card [pet]="pet" [showStatus]="true"></app-pet-card>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- My Organizations -->
+      <div class="card orgs-card">
+        <div class="orgs-header">
+          <h2>My Organizations</h2>
+          <button class="btn btn-primary" (click)="toggleAddOrg()">
+            {{ showAddOrg() ? 'Cancel' : '+ New Org' }}
+          </button>
+        </div>
+
+        @if (showAddOrg()) {
+          <div class="add-org-form">
+            @if (addOrgError) {
+              <div class="error-message">{{ addOrgError }}</div>
+            }
+
+            <div class="form-group">
+              <label for="orgName">Organization Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="orgName"
+                [(ngModel)]="newOrgName"
+                placeholder="Enter organization name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="orgType">Type <span class="required">*</span></label>
+              <select id="orgType" [(ngModel)]="newOrgType">
+                @for (type of orgTypeOptions; track type) {
+                  <option [value]="type">{{ getOrgTypeLabel(type) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="orgLocation">Location</label>
+              <input
+                type="text"
+                id="orgLocation"
+                [(ngModel)]="newOrgLocation"
+                placeholder="City, State"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="orgBio">Description</label>
+              <textarea
+                id="orgBio"
+                [(ngModel)]="newOrgBio"
+                placeholder="Tell us about your organization"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="addOrganization()"
+              [disabled]="isAddingOrg"
+            >
+              {{ isAddingOrg ? 'Creating...' : 'Create Organization' }}
+            </button>
+          </div>
+        }
+
+        @if (organizations().length === 0 && !showAddOrg()) {
+          <p class="no-orgs">You're not managing any organizations yet. Create one to get started!</p>
+        } @else {
+          <div class="orgs-list">
+            @for (orgWithRole of organizations(); track orgWithRole.organization.id) {
+              <a [routerLink]="['/organization', orgWithRole.organization.id]" class="org-item">
+                <div class="org-icon">{{ orgWithRole.organization.name.charAt(0).toUpperCase() }}</div>
+                <div class="org-info">
+                  <span class="org-name">{{ orgWithRole.organization.name }}</span>
+                  <span class="org-type">{{ getOrgTypeLabel(orgWithRole.organization.orgType) }}</span>
+                </div>
+                <span class="org-role">{{ orgWithRole.role | titlecase }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- My Posts -->
+      <div class="card posts-card">
+        <div class="posts-header">
+          <h2>My Posts</h2>
+          @if (organizations().length > 0) {
+            <div class="post-as-selector">
+              <span class="post-as-label">Posting as:</span>
+              <button class="post-as-button" (click)="togglePostAsSelector()" type="button">
+                <span class="post-as-avatar" [class.org]="isPostingAsOrg()">{{ getSelectedPostAsInitial() }}</span>
+                <span class="post-as-name">{{ getSelectedPostAsName() }}</span>
+                <span class="post-as-arrow">▼</span>
+              </button>
+              @if (showPostAsSelector()) {
+                <div class="post-as-dropdown">
+                  <button class="post-as-option" (click)="selectPostAs('')" [class.selected]="!postAsOrgId">
+                    <span class="option-avatar">{{ profile()!.user.name.charAt(0).toUpperCase() }}</span>
+                    <span class="option-name">{{ profile()!.user.name }} (You)</span>
+                  </button>
+                  @for (orgWithRole of organizations(); track orgWithRole.organization.id) {
+                    <button class="post-as-option" (click)="selectPostAs(orgWithRole.organization.id)" [class.selected]="postAsOrgId === orgWithRole.organization.id">
+                      <span class="option-avatar org">{{ orgWithRole.organization.name.charAt(0).toUpperCase() }}</span>
+                      <span class="option-name">{{ orgWithRole.organization.name }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Create Post Form -->
+        <div class="create-post-form">
+          @if (postError) {
+            <div class="error-message">{{ postError }}</div>
+          }
+          <textarea
+            [(ngModel)]="newPostContent"
+            placeholder="What's on your mind?"
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+          <div class="image-url-input">
+            <input
+              type="url"
+              [(ngModel)]="newPostImageUrl"
+              placeholder="Image URL (optional)"
+              class="image-url-field"
+            />
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="createPost()"
+            [disabled]="isPosting || !newPostContent.trim()"
+          >
+            {{ isPosting ? 'Posting...' : 'Post to my wall' }}
+          </button>
+        </div>
+
+        @if (posts().length === 0) {
+          <p class="no-posts">You haven't made any posts yet.</p>
+        } @else {
+          <div class="posts-list">
+            @for (post of posts(); track post.id) {
+              <app-post-item
+                [post]="post"
+                [showDeleteButton]="true"
+                [showTarget]="true"
+                (delete)="deletePost($event)"
+              ></app-post-item>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

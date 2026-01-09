@@ -1,0 +1,73 @@
+<div class="post-item">
+  <div class="post-header">
+    <!-- Author avatar and name -->
+    @if (post.authorType === 'organization') {
+      <a [routerLink]="['/organization', post.authorId]" class="author-link">
+        <span class="author-avatar org">{{ post.authorName.charAt(0).toUpperCase() }}</span>
+        <span class="author-name">{{ post.authorName }}</span>
+      </a>
+    } @else {
+      <a [routerLink]="['/user', post.authorId]" class="author-link">
+        <span class="author-avatar">{{ post.authorName.charAt(0).toUpperCase() }}</span>
+        <span class="author-name">{{ post.authorName }}</span>
+      </a>
+    }
+
+    <!-- Target info (where the post was posted) -->
+    @if (showTarget) {
+      <span class="post-target">
+        @if (post.petId) {
+          on
+          <a [routerLink]="['/pet', post.petId]" class="target-link">
+            <span class="pet-avatar">{{ getSpeciesEmoji(post.petSpecies || '') }}</span>
+            {{ post.petName }}'s wall
+          </a>
+        } @else if (post.authorType === 'organization') {
+          on
+          <a [routerLink]="['/organization', post.authorId]" class="target-link">
+            <span class="user-avatar org">{{ post.authorName.charAt(0).toUpperCase() }}</span>
+            their wall
+          </a>
+        } @else {
+          on
+          <a [routerLink]="['/user', post.authorId]" class="target-link">
+            <span class="user-avatar">{{ post.authorName.charAt(0).toUpperCase() }}</span>
+            their wall
+          </a>
+        }
+      </span>
+    }
+
+    <!-- Timestamp -->
+    @if (post.createdAt) {
+      <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+    }
+  </div>
+
+  <div class="post-content">{{ post.content }}</div>
+
+  @if (post.imageUrl) {
+    <div class="post-image-container">
+      <img
+        [src]="post.imageUrl"
+        [alt]="'Image posted by ' + post.authorName"
+        class="post-image"
+        (click)="toggleImageFullscreen()"
+        [class.fullscreen]="isImageFullscreen"
+        (error)="handleImageError($event)"
+      />
+      @if (isImageFullscreen) {
+        <div class="image-overlay" (click)="toggleImageFullscreen()">
+          <img [src]="post.imageUrl" [alt]="'Image posted by ' + post.authorName" class="fullscreen-image" />
+          <span class="close-button">×</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (showDeleteButton) {
+    <div class="post-actions">
+      <button class="btn-text btn-danger" (click)="onDelete()">Delete</button>
+    </div>
+  }
+</div>

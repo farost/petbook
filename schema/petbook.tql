@@ -1,0 +1,196 @@
+define
+
+# =============================================================================
+# ATTRIBUTE TYPES
+# =============================================================================
+
+# Common attributes
+attribute id value string;
+attribute email value string;
+attribute password_hash value string;
+attribute name value string;
+attribute bio value string;
+attribute location value string;
+attribute profile_image_url value string;
+attribute created_at value datetime;
+attribute updated_at value datetime;
+
+# User-specific attributes (flexible birthday: year OR year+month OR year+month+day)
+attribute birth_year value integer;   # For approximate birthdays
+attribute birth_month value integer;  # 1-12, optional
+attribute birth_day value integer;    # 1-31, optional
+attribute user_type value string;     # individual, shelter, breeder, vet_clinic
+
+# Organization-specific attributes (establishment date: year OR year+month OR year+month+day)
+attribute established_year value integer;
+attribute established_month value integer;  # 1-12, optional
+attribute established_day value integer;    # 1-31, optional
+
+# Pet-specific attributes
+attribute species value string;    # dog, cat, bird, reptile, small_animal, other
+attribute breed value string;
+attribute pet_status value string; # owned, for_adoption, for_sale, needs_help
+attribute sex value string;        # male, female, unknown
+
+# Post attributes
+attribute content value string;
+attribute image_url value string;  # URL of image attached to a post
+
+# Ownership attributes
+attribute ownership_status value string;  # current, past
+attribute start_date value datetime;
+attribute end_date value datetime;
+attribute transfer_reason value string;   # adoption, surrender, rescue, sale, gift
+
+# Organization management attributes
+attribute role_type value string;  # owner, admin, member
+
+# Reaction attributes
+attribute reaction_type value string;  # like, love, sad
+
+# Adoption listing attributes
+attribute adoption_fee value double;
+attribute adoption_description value string;
+attribute listing_status value string;  # active, pending, completed, withdrawn
+
+# =============================================================================
+# ENTITY TYPES
+# =============================================================================
+
+entity user @abstract,
+    owns id @key,
+    owns email @unique,
+    owns password_hash,
+    owns name,
+    owns bio,
+    owns location,
+    owns profile_image_url,
+    owns created_at,
+    owns updated_at;
+
+entity individual sub user,
+    owns birth_year,
+    owns birth_month,
+    owns birth_day;
+
+entity organization sub user,
+    owns user_type,
+    owns established_year,
+    owns established_month,
+    owns established_day;
+
+entity pet,
+    owns id @key,
+    owns name,
+    owns species,
+    owns breed,
+    owns bio,
+    owns pet_status,
+    owns sex,
+    owns birth_year,
+    owns birth_month,
+    owns birth_day,
+    owns profile_image_url,
+    owns created_at,
+    owns updated_at;
+
+entity post,
+    owns id @key,
+    owns content,
+    owns image_url,
+    owns created_at,
+    owns updated_at;
+
+entity photo,
+    owns id @key,
+    owns profile_image_url,
+    owns created_at;
+
+# =============================================================================
+# RELATION TYPES
+# =============================================================================
+
+# Ownership relation - connects users to pets with temporal data
+relation ownership,
+    relates owner,
+    relates pet,
+    owns ownership_status,
+    owns start_date,
+    owns end_date,
+    owns transfer_reason;
+
+user plays ownership:owner;
+pet plays ownership:pet;
+
+# Organization management - individuals manage organizations
+relation org_management,
+    relates manager,
+    relates org,
+    owns role_type;
+
+individual plays org_management:manager;
+organization plays org_management:org;
+
+# Follows relation - users can follow other users or pets
+relation follows,
+    relates follower,
+    relates following;
+
+user plays follows:follower;
+user plays follows:following;
+pet plays follows:following;
+
+# Authorship relation - connects users to their content
+relation authorship,
+    relates author,
+    relates content;
+
+user plays authorship:author;
+post plays authorship:content;
+photo plays authorship:content;
+
+# Pet post relation - connects posts to pets (posts on pet walls)
+relation pet_post,
+    relates pet,
+    relates post;
+
+pet plays pet_post:pet;
+post plays pet_post:post;
+
+# User wall post relation - connects posts to user walls
+relation user_wall_post,
+    relates wall_owner,
+    relates wall_post;
+
+individual plays user_wall_post:wall_owner;
+post plays user_wall_post:wall_post;
+
+# Org wall post relation - connects posts to organization walls
+relation org_wall_post,
+    relates wall_owner,
+    relates wall_post;
+
+organization plays org_wall_post:wall_owner;
+post plays org_wall_post:wall_post;
+
+# Reaction relation - users react to posts
+relation reaction,
+    relates reactor,
+    relates target,
+    owns reaction_type;
+
+user plays reaction:reactor;
+post plays reaction:target;
+
+# Adoption listing relation - shelters list pets for adoption
+relation adoption_listing,
+    relates shelter,
+    relates pet,
+    owns adoption_fee,
+    owns adoption_description,
+    owns listing_status,
+    owns created_at,
+    owns updated_at;
+
+organization plays adoption_listing:shelter;
+pet plays adoption_listing:pet;

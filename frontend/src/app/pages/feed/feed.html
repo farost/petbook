@@ -1,0 +1,126 @@
+<div class="feed-page">
+  <div class="feed-container">
+    <!-- Create Post Card -->
+    <div class="card create-post-card">
+      <div class="post-form-header">
+        <h3>Create Post</h3>
+        @if (myOrgs().length > 0) {
+          <div class="post-as-selector">
+            <span class="post-as-label">Posting as:</span>
+            <button class="post-as-button" (click)="togglePostAsSelector()" type="button">
+              <span class="post-as-avatar" [class.org]="isPostingAsOrg()">{{ getSelectedPostAsInitial() }}</span>
+              <span class="post-as-name">{{ getSelectedPostAsName() }}</span>
+              <span class="post-as-arrow">▼</span>
+            </button>
+            @if (showPostAsSelector()) {
+              <div class="post-as-dropdown">
+                <button class="post-as-option" (click)="selectPostAs('')" [class.selected]="!postAsOrgId">
+                  <span class="option-avatar">{{ authService.user()?.name?.charAt(0)?.toUpperCase() }}</span>
+                  <span class="option-name">{{ authService.user()?.name }} (You)</span>
+                </button>
+                @for (orgWithRole of myOrgs(); track orgWithRole.organization.id) {
+                  <button class="post-as-option" (click)="selectPostAs(orgWithRole.organization.id)" [class.selected]="postAsOrgId === orgWithRole.organization.id">
+                    <span class="option-avatar org">{{ orgWithRole.organization.name.charAt(0).toUpperCase() }}</span>
+                    <span class="option-name">{{ orgWithRole.organization.name }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      @if (postError) {
+        <div class="error-message">{{ postError }}</div>
+      }
+
+      <textarea
+        [(ngModel)]="newPostContent"
+        placeholder="What's on your mind?"
+        rows="3"
+        maxlength="1000"
+      ></textarea>
+
+      <div class="image-url-input">
+        <input
+          type="url"
+          [(ngModel)]="newPostImageUrl"
+          placeholder="Image URL (optional)"
+          class="image-url-field"
+        />
+      </div>
+
+      <div class="post-options">
+        <div class="target-selector">
+          <span class="target-label">Post to:</span>
+          <button class="target-button" (click)="toggleTargetSelector()" type="button">
+            @if (getSelectedTarget(); as target) {
+              @if (isTargetPet(target)) {
+                <span class="target-avatar pet">{{ getSpeciesEmoji(target.petSpecies || '') }}</span>
+              } @else if (isTargetOrg(target)) {
+                <span class="target-avatar org">{{ getTargetIcon(target) }}</span>
+              } @else {
+                <span class="target-avatar">{{ getTargetIcon(target) }}</span>
+              }
+            } @else {
+              <span class="target-avatar">?</span>
+            }
+            <span class="target-name">{{ getSelectedTargetLabel() }}</span>
+            <span class="target-arrow">▼</span>
+          </button>
+          @if (showTargetSelector()) {
+            <div class="target-dropdown">
+              @for (target of postTargets(); track target.id) {
+                <button class="target-option" (click)="selectTarget(target.id)" [class.selected]="selectedTargetId === target.id">
+                  @if (isTargetPet(target)) {
+                    <span class="option-avatar pet">{{ getSpeciesEmoji(target.petSpecies || '') }}</span>
+                  } @else if (isTargetOrg(target)) {
+                    <span class="option-avatar org">{{ getTargetIcon(target) }}</span>
+                  } @else {
+                    <span class="option-avatar">{{ getTargetIcon(target) }}</span>
+                  }
+                  <span class="option-name">{{ target.label }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="createPost()"
+          [disabled]="isPosting || !newPostContent.trim()"
+        >
+          {{ isPosting ? 'Posting...' : 'Post' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Feed -->
+    @if (isLoading()) {
+      <div class="loading">Loading feed...</div>
+    } @else if (error()) {
+      <div class="error-message">{{ error() }}</div>
+    } @else if (posts().length === 0) {
+      <div class="card empty-feed">
+        <p>Your feed is empty!</p>
+        <p>Follow some users or pets to see their posts here.</p>
+        <a routerLink="/profile" class="btn btn-primary">Go to Profile</a>
+      </div>
+    } @else {
+      <div class="posts-list">
+        @for (post of posts(); track post.id) {
+          <div class="card post-card">
+            <app-post-item
+              [post]="post"
+              [showDeleteButton]="isMyPost(post)"
+              [showTarget]="true"
+              (delete)="deletePost($event)"
+            ></app-post-item>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

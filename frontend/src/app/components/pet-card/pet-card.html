@@ -1,0 +1,28 @@
+<a [routerLink]="['/pet', pet.id]" class="pet-card">
+  <span class="pet-emoji">{{ getSpeciesEmoji(pet.species) }}</span>
+  <div class="pet-details">
+    <div class="pet-main-info">
+      <span class="pet-name">{{ pet.name }}</span>
+      @if (pet.sex && pet.sex !== 'unknown') {
+        <span class="pet-sex">{{ getSexEmoji(pet.sex) }}</span>
+      }
+      <span class="pet-species-badge">{{ getSpeciesLabel(pet.species) }}</span>
+      @if (calculateAge(pet.birthYear, pet.birthMonth, pet.birthDay)) {
+        <span class="pet-age">{{ calculateAge(pet.birthYear, pet.birthMonth, pet.birthDay) }}</span>
+      }
+      @if (showStatusBadge) {
+        <span class="pet-status-badge" [class]="'status-' + petStatus">{{ petStatus | titlecase }}</span>
+      }
+    </div>
+    @if (pet.breed || pet.bio) {
+      <div class="pet-secondary-info">
+        @if (pet.breed) {
+          <span class="pet-breed">{{ pet.breed }}</span>
+        }
+        @if (pet.bio) {
+          <p class="pet-bio">{{ pet.bio }}</p>
+        }
+      </div>
+    }
+  </div>
+</a>

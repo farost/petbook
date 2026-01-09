@@ -1,0 +1,340 @@
+<div class="discover-page">
+  <div class="discover-container">
+    <h1>Discover</h1>
+
+    <div class="search-section">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search pets, users, and organizations..."
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          (keyup.enter)="search()"
+        />
+        <button class="btn btn-primary" (click)="search()">Search</button>
+        @if (searchQuery()) {
+          <button class="btn btn-secondary" (click)="clearSearch()">Clear</button>
+        }
+      </div>
+
+      <div class="search-controls">
+        <button class="btn btn-secondary filter-toggle" (click)="toggleFilters()" [class.active]="showFilters()">
+          Filters @if (hasActiveFilters()) { <span class="filter-badge">!</span> }
+        </button>
+
+        <div class="page-size-selector">
+          <label>Show:</label>
+          <select (change)="changePageSize(+$any($event.target).value)">
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size" [selected]="size === pageSize()">{{ size }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button
+        class="tab"
+        [class.active]="activeTab() === 'pets'"
+        (click)="setTab('pets')"
+      >
+        Pets ({{ petsTotal() }})
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab() === 'users'"
+        (click)="setTab('users')"
+      >
+        Users ({{ usersTotal() }})
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab() === 'organizations'"
+        (click)="setTab('organizations')"
+      >
+        Organizations ({{ orgsTotal() }})
+      </button>
+    </div>
+
+    <!-- Filter Panel -->
+    @if (showFilters()) {
+      <div class="filter-panel">
+        @if (activeTab() === 'pets') {
+          <div class="filter-group">
+            <label>Species:</label>
+            <select (change)="setPetSpeciesFilter($any($event.target).value)">
+              <option value="">All species</option>
+              @for (species of speciesOptions; track species) {
+                <option [value]="species" [selected]="petFilters().species === species">{{ getSpeciesLabel(species) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Owner:</label>
+            <select (change)="setPetOwnerTypeFilter($any($event.target).value)">
+              <option value="">All owners</option>
+              <option value="individual" [selected]="petFilters().ownerType === 'individual'">People</option>
+              <option value="organization" [selected]="petFilters().ownerType === 'organization'">Organizations</option>
+            </select>
+          </div>
+
+          @if (petFilters().ownerType === 'organization') {
+            <div class="filter-group">
+              <label>Org Type:</label>
+              <select (change)="setPetOrgTypeFilter($any($event.target).value)">
+                <option value="">All org types</option>
+                @for (type of orgTypeOptions; track type) {
+                  <option [value]="type" [selected]="petFilters().orgType === type">{{ getOrgTypeLabel(type) }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <div class="filter-group sort-group">
+            <label>Sort:</label>
+            <select (change)="setPetSortField($any($event.target).value)">
+              <option value="name" [selected]="petSortField() === 'name'">Name</option>
+              <option value="recent" [selected]="petSortField() === 'recent'">Recently added</option>
+            </select>
+            <button class="sort-direction-btn" (click)="togglePetSortDirection()" [title]="petSortDesc() ? 'Descending' : 'Ascending'">
+              <span class="sort-arrows">
+                <span class="arrow up" [class.active]="!petSortDesc()">▲</span>
+                <span class="arrow down" [class.active]="petSortDesc()">▼</span>
+              </span>
+            </button>
+          </div>
+        }
+
+        @if (activeTab() === 'users') {
+          <div class="filter-group sort-group">
+            <label>Sort:</label>
+            <select (change)="setUserSortField($any($event.target).value)">
+              <option value="name" [selected]="userSortField() === 'name'">Name</option>
+              <option value="most_pets" [selected]="userSortField() === 'most_pets'">Most pets</option>
+              <option value="recent" [selected]="userSortField() === 'recent'">Recently joined</option>
+            </select>
+            <button class="sort-direction-btn" (click)="toggleUserSortDirection()" [title]="userSortDesc() ? 'Descending' : 'Ascending'">
+              <span class="sort-arrows">
+                <span class="arrow up" [class.active]="!userSortDesc()">▲</span>
+                <span class="arrow down" [class.active]="userSortDesc()">▼</span>
+              </span>
+            </button>
+          </div>
+        }
+
+        @if (activeTab() === 'organizations') {
+          <div class="filter-group">
+            <label>Type:</label>
+            <select (change)="setOrgTypeFilter($any($event.target).value)">
+              <option value="">All types</option>
+              @for (type of orgTypeOptions; track type) {
+                <option [value]="type" [selected]="orgFilters().orgType === type">{{ getOrgTypeLabel(type) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="filter-group sort-group">
+            <label>Sort:</label>
+            <select (change)="setOrgSortField($any($event.target).value)">
+              <option value="name" [selected]="orgSortField() === 'name'">Name</option>
+              <option value="most_pets" [selected]="orgSortField() === 'most_pets'">Most pets</option>
+              <option value="recent" [selected]="orgSortField() === 'recent'">Recently created</option>
+            </select>
+            <button class="sort-direction-btn" (click)="toggleOrgSortDirection()" [title]="orgSortDesc() ? 'Descending' : 'Ascending'">
+              <span class="sort-arrows">
+                <span class="arrow up" [class.active]="!orgSortDesc()">▲</span>
+                <span class="arrow down" [class.active]="orgSortDesc()">▼</span>
+              </span>
+            </button>
+          </div>
+        }
+
+        @if (hasActiveFilters()) {
+          <button class="btn btn-secondary btn-sm" (click)="clearFilters()">Clear all</button>
+        }
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="loading">Loading...</div>
+    } @else {
+      @if (activeTab() === 'pets') {
+        <div class="results-grid">
+          @for (pet of pets(); track pet.pet.id) {
+            <a [routerLink]="['/pet', pet.pet.id]" class="card result-card pet-result">
+              <span class="pet-emoji">{{ getSpeciesEmoji(pet.pet.species) }}</span>
+              <div class="result-info">
+                <h3>{{ pet.pet.name }}</h3>
+                <p class="species">
+                  <a href="#" class="filter-link" (click)="filterBySpecies(pet.pet.species, $event)">{{ getSpeciesLabel(pet.pet.species) }}</a>
+                </p>
+                <p class="owner">
+                  @if (pet.ownerType === 'organization') {
+                    Org: <a [routerLink]="['/organization', pet.ownerId]" class="owner-link" (click)="$event.stopPropagation()">{{ pet.ownerName }}</a>
+                  } @else {
+                    Owner: <a [routerLink]="['/user', pet.ownerId]" class="owner-link" (click)="$event.stopPropagation()">{{ pet.ownerName }}</a>
+                  }
+                </p>
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-state">
+              <p>No pets found.</p>
+            </div>
+          }
+        </div>
+
+        <!-- Pets Pagination -->
+        @if (petsTotalPages() > 1) {
+          <div class="pagination">
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="petsPage() === 1"
+              (click)="goToPetsPage(petsPage() - 1)"
+            >
+              ‹ Prev
+            </button>
+
+            @for (page of getVisiblePages(petsPage(), petsTotalPages()); track $index) {
+              @if (isEllipsis(page)) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  class="pagination-btn"
+                  [class.active]="page === petsPage()"
+                  (click)="goToPetsPage(page)"
+                >
+                  {{ page }}
+                </button>
+              }
+            }
+
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="petsPage() === petsTotalPages()"
+              (click)="goToPetsPage(petsPage() + 1)"
+            >
+              Next ›
+            </button>
+          </div>
+        }
+      }
+
+      @if (activeTab() === 'users') {
+        <div class="results-grid">
+          @for (user of users(); track user.id) {
+            <a [routerLink]="['/user', user.id]" class="card result-card user-result">
+              <span class="user-avatar">{{ getUserInitial(user.name) }}</span>
+              <div class="result-info">
+                <h3>{{ user.name }}</h3>
+                <p class="email">{{ user.email }}</p>
+                @if (user.petCount !== undefined && user.petCount > 0) {
+                  <p class="pet-count">{{ user.petCount }} {{ user.petCount === 1 ? 'pet' : 'pets' }}</p>
+                }
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-state">
+              <p>No users found.</p>
+            </div>
+          }
+        </div>
+
+        <!-- Users Pagination -->
+        @if (usersTotalPages() > 1) {
+          <div class="pagination">
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="usersPage() === 1"
+              (click)="goToUsersPage(usersPage() - 1)"
+            >
+              ‹ Prev
+            </button>
+
+            @for (page of getVisiblePages(usersPage(), usersTotalPages()); track $index) {
+              @if (isEllipsis(page)) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  class="pagination-btn"
+                  [class.active]="page === usersPage()"
+                  (click)="goToUsersPage(page)"
+                >
+                  {{ page }}
+                </button>
+              }
+            }
+
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="usersPage() === usersTotalPages()"
+              (click)="goToUsersPage(usersPage() + 1)"
+            >
+              Next ›
+            </button>
+          </div>
+        }
+      }
+
+      @if (activeTab() === 'organizations') {
+        <div class="results-grid">
+          @for (org of organizations(); track org.id) {
+            <a [routerLink]="['/organization', org.id]" class="card result-card org-result">
+              <span class="org-icon">{{ getUserInitial(org.name) }}</span>
+              <div class="result-info">
+                <h3>{{ org.name }}</h3>
+                <p class="org-type">
+                  <a href="#" class="filter-link" (click)="filterByOrgType(org.orgType, $event)">{{ getOrgTypeLabel(org.orgType) }}</a>
+                </p>
+                @if (org.petCount !== undefined && org.petCount > 0) {
+                  <p class="pet-count">{{ org.petCount }} {{ org.petCount === 1 ? 'pet' : 'pets' }}</p>
+                }
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-state">
+              <p>No organizations found.</p>
+            </div>
+          }
+        </div>
+
+        <!-- Organizations Pagination -->
+        @if (orgsTotalPages() > 1) {
+          <div class="pagination">
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="orgsPage() === 1"
+              (click)="goToOrgsPage(orgsPage() - 1)"
+            >
+              ‹ Prev
+            </button>
+
+            @for (page of getVisiblePages(orgsPage(), orgsTotalPages()); track $index) {
+              @if (isEllipsis(page)) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  class="pagination-btn"
+                  [class.active]="page === orgsPage()"
+                  (click)="goToOrgsPage(page)"
+                >
+                  {{ page }}
+                </button>
+              }
+            }
+
+            <button
+              class="pagination-btn nav-btn"
+              [disabled]="orgsPage() === orgsTotalPages()"
+              (click)="goToOrgsPage(orgsPage() + 1)"
+            >
+              Next ›
+            </button>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

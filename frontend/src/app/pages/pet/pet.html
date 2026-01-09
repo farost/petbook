@@ -1,0 +1,338 @@
+<div class="pet-page">
+  @if (isLoading()) {
+    <div class="loading">Loading pet profile...</div>
+  } @else if (error()) {
+    <div class="card error-card">
+      <div class="error-message">{{ error() }}</div>
+      <a routerLink="/" class="btn btn-primary">Go Home</a>
+    </div>
+  } @else if (petData()) {
+    <div class="pet-container">
+      <div class="card pet-profile-card">
+        <div class="pet-header">
+          <span class="pet-emoji">{{ getSpeciesEmoji(petData()!.pet.species) }}</span>
+          <div class="pet-info">
+            <h1>{{ petData()!.pet.name }}</h1>
+            <div class="pet-badges">
+              <span class="species-badge">
+                <a routerLink="/discover" [queryParams]="{species: petData()!.pet.species, tab: 'pets'}" class="species-link">{{ getSpeciesLabel(petData()!.pet.species) }}</a>
+              </span>
+              @if (petData()!.pet.sex) {
+                <span class="sex-badge">{{ getSexEmoji(petData()!.pet.sex) }} {{ getSexLabel(petData()!.pet.sex) }}</span>
+              }
+              @if (isSpecialStatus()) {
+                <span class="status-badge" [class]="getStatusClass(petData()!.pet.petStatus)">{{ getStatusLabel(petData()!.pet.petStatus) }}</span>
+              }
+            </div>
+            @if (petData()!.pet.breed) {
+              <p class="breed">{{ petData()!.pet.breed }}</p>
+            }
+            @if (calculateAge(petData()!.pet.birthYear, petData()!.pet.birthMonth, petData()!.pet.birthDay)) {
+              <p class="age">
+                {{ calculateAge(petData()!.pet.birthYear, petData()!.pet.birthMonth, petData()!.pet.birthDay) }} old
+                @if (hasBirthdayUncertainty()) {
+                  <span class="uncertainty-indicator" title="Exact birth date unknown">?</span>
+                }
+              </p>
+            }
+            <p class="followers">{{ followerCount() }} followers</p>
+          </div>
+          @if (authService.isLoggedIn() && !isOwner()) {
+            <button
+              class="btn follow-btn"
+              [class.btn-primary]="!isFollowing()"
+              [class.btn-outline]="isFollowing()"
+              (click)="toggleFollow()"
+            >
+              {{ isFollowing() ? 'Following' : 'Follow' }}
+            </button>
+          }
+        </div>
+
+        @if (petData()!.pet.bio) {
+          <div class="pet-bio">
+            <h3>About</h3>
+            <p>{{ petData()!.pet.bio }}</p>
+          </div>
+        }
+
+        <div class="owner-section">
+          <h3>Owner</h3>
+          @if (petData()!.ownerType === 'organization') {
+            <a [routerLink]="['/organization', petData()!.ownerId]" class="owner-link org-owner">
+              <span class="owner-avatar org">{{ petData()!.ownerName.charAt(0).toUpperCase() }}</span>
+              <span class="owner-name">{{ petData()!.ownerName }}</span>
+            </a>
+          } @else {
+            <a [routerLink]="['/user', petData()!.ownerId]" class="owner-link">
+              <span class="owner-avatar">{{ petData()!.ownerName.charAt(0).toUpperCase() }}</span>
+              <span class="owner-name">{{ petData()!.ownerName }}</span>
+            </a>
+          }
+          <span class="ownership-status">{{ petData()!.ownershipStatus | titlecase }} owner</span>
+        </div>
+
+        @if (isOwner()) {
+          <div class="owner-actions">
+            <button class="btn btn-outline" (click)="toggleEditPet()">
+              {{ showEditPet() ? 'Cancel Edit' : 'Edit Pet' }}
+            </button>
+            <button class="btn btn-outline" (click)="toggleTransfer()">
+              {{ showTransfer() ? 'Cancel' : 'Transfer Pet' }}
+            </button>
+            <button class="btn btn-outline btn-danger" (click)="deletePet()">
+              Remove Pet
+            </button>
+          </div>
+
+          @if (showEditPet()) {
+            <div class="edit-pet-form">
+              <h4>Edit {{ petData()!.pet.name }}</h4>
+              @if (editPetError) {
+                <div class="error-message">{{ editPetError }}</div>
+              }
+
+              <div class="form-group">
+                <label for="editPetName">Name <span class="required">*</span></label>
+                <input type="text" id="editPetName" [(ngModel)]="editPetName" placeholder="Pet name" required />
+              </div>
+
+              <div class="form-group">
+                <label for="editPetSpecies">Species <span class="required">*</span></label>
+                <select id="editPetSpecies" [(ngModel)]="editPetSpecies">
+                  @for (species of speciesOptions; track species) {
+                    <option [value]="species">{{ getSpeciesEmoji(species) }} {{ getSpeciesLabel(species) }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="editPetBreed">Breed</label>
+                <input type="text" id="editPetBreed" [(ngModel)]="editPetBreed" placeholder="Breed" />
+              </div>
+
+              <div class="form-group">
+                <label for="editPetSex">Sex</label>
+                <select id="editPetSex" [(ngModel)]="editPetSex">
+                  @for (sex of sexOptions; track sex) {
+                    <option [value]="sex">{{ getSexLabel(sex) || 'Not specified' }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Birthday</label>
+                <div class="birthday-inputs">
+                  <select [(ngModel)]="editPetBirthYear" class="birth-year">
+                    <option [ngValue]="null">Year</option>
+                    @for (year of getYearOptions(); track year) {
+                      <option [ngValue]="year">{{ year }}</option>
+                    }
+                  </select>
+                  <select [(ngModel)]="editPetBirthMonth" class="birth-month">
+                    @for (month of monthOptions; track month.value) {
+                      <option [ngValue]="month.value">{{ month.label }}</option>
+                    }
+                  </select>
+                  <select [(ngModel)]="editPetBirthDay" class="birth-day" [disabled]="!editPetBirthMonth">
+                    <option [ngValue]="null">Day</option>
+                    @for (day of getDayOptions(); track day) {
+                      <option [ngValue]="day">{{ day }}</option>
+                    }
+                  </select>
+                </div>
+                <span class="form-hint">Leave blank if unknown. Year only is fine.</span>
+              </div>
+
+              <div class="form-group">
+                <label for="editPetStatus">Status</label>
+                <select id="editPetStatus" [(ngModel)]="editPetStatus">
+                  @for (status of statusOptions; track status) {
+                    <option [value]="status">{{ getStatusLabel(status) }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="editPetBio">Bio</label>
+                <textarea id="editPetBio" [(ngModel)]="editPetBio" placeholder="Tell us about this pet" rows="3"></textarea>
+              </div>
+
+              <button type="button" class="btn btn-primary" (click)="savePet()" [disabled]="isSavingPet">
+                {{ isSavingPet ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          }
+
+          @if (showTransfer()) {
+            <div class="transfer-form">
+              <h4>Transfer {{ petData()!.pet.name }}</h4>
+              @if (transferError) {
+                <div class="error-message">{{ transferError }}</div>
+              }
+
+              <div class="form-group">
+                <label>Transfer to:</label>
+                <div class="radio-group">
+                  <label>
+                    <input type="radio" [(ngModel)]="transferToType" value="user" /> User
+                  </label>
+                  <label>
+                    <input type="radio" [(ngModel)]="transferToType" value="org" /> Organization
+                  </label>
+                </div>
+              </div>
+
+              @if (transferToType === 'user') {
+                <div class="form-group">
+                  <label for="transferUser">Select User</label>
+                  <select id="transferUser" [(ngModel)]="transferToUserId">
+                    <option value="">Choose a user...</option>
+                    @for (user of availableUsers(); track user.id) {
+                      <option [value]="user.id">{{ user.name }} ({{ user.email }})</option>
+                    }
+                  </select>
+                </div>
+              } @else {
+                <div class="form-group">
+                  <label for="transferOrg">Select Organization</label>
+                  <select id="transferOrg" [(ngModel)]="transferToOrgId">
+                    <option value="">Choose an organization...</option>
+                    @for (org of availableOrgs(); track org.organization.id) {
+                      <option [value]="org.organization.id">{{ org.organization.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              <div class="form-group">
+                <label for="transferReason">Reason</label>
+                <select id="transferReason" [(ngModel)]="transferReason">
+                  @for (reason of transferReasons; track reason) {
+                    <option [value]="reason">{{ getReasonLabel(reason) }}</option>
+                  }
+                </select>
+              </div>
+
+              <button class="btn btn-primary" (click)="transferPet()" [disabled]="isTransferring">
+                {{ isTransferring ? 'Transferring...' : 'Confirm Transfer' }}
+              </button>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Post on pet's wall -->
+      @if (authService.isLoggedIn()) {
+        <div class="card post-form-card">
+          <div class="post-form-header">
+            <h3>Post on {{ petData()!.pet.name }}'s wall</h3>
+            <div class="post-as-selector">
+              <span class="post-as-label">Posting as:</span>
+              <button class="post-as-button" (click)="togglePostAsSelector()" type="button">
+                <span class="post-as-avatar" [class.org]="postAsOrgId">{{ getSelectedPostAsInitial() }}</span>
+                <span class="post-as-name">{{ getSelectedPostAsName() }}</span>
+                <span class="post-as-arrow">▼</span>
+              </button>
+              @if (showPostAsSelector()) {
+                <div class="post-as-dropdown">
+                  <button class="post-as-option" (click)="selectPostAs('')" [class.selected]="!postAsOrgId">
+                    <span class="option-avatar">{{ authService.user()?.name?.charAt(0)?.toUpperCase() }}</span>
+                    <span class="option-name">{{ authService.user()?.name }} (You)</span>
+                  </button>
+                  @for (orgWithRole of myOrganizations(); track orgWithRole.organization.id) {
+                    <button class="post-as-option" (click)="selectPostAs(orgWithRole.organization.id)" [class.selected]="postAsOrgId === orgWithRole.organization.id">
+                      <span class="option-avatar org">{{ orgWithRole.organization.name.charAt(0).toUpperCase() }}</span>
+                      <span class="option-name">{{ orgWithRole.organization.name }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+          <textarea
+            [(ngModel)]="newPostContent"
+            placeholder="Write something about {{ petData()!.pet.name }}..."
+            rows="3"
+          ></textarea>
+          <div class="image-url-input">
+            <input
+              type="url"
+              [(ngModel)]="newPostImageUrl"
+              placeholder="Image URL (optional)"
+              class="image-url-field"
+            />
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="createPost()"
+            [disabled]="isPosting || !newPostContent.trim()"
+          >
+            {{ isPosting ? 'Posting...' : 'Post' }}
+          </button>
+        </div>
+      }
+
+      <!-- Pet's wall posts -->
+      @if (posts().length > 0) {
+        <div class="posts-section">
+          <h3>Wall Posts</h3>
+          @for (post of posts(); track post.id) {
+            <div class="card post-card">
+              <app-post-item
+                [post]="post"
+                [showDeleteButton]="isMyPost(post)"
+                [showTarget]="false"
+                (delete)="deletePost($event)"
+              ></app-post-item>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Ownership History -->
+      @if (ownershipHistory().length > 1) {
+        <div class="card history-card">
+          <h3>Ownership History</h3>
+          <div class="history-timeline">
+            @for (record of ownershipHistory(); track $index) {
+              <div class="history-item" [class.current]="record.status === 'current'">
+                <div class="history-marker"></div>
+                <div class="history-content">
+                  <div class="history-owner">
+                    @if (record.ownerType === 'organization') {
+                      <a [routerLink]="['/organization', record.ownerId]" class="history-owner-link org">
+                        <span class="history-avatar org">{{ record.ownerName.charAt(0).toUpperCase() }}</span>
+                        {{ record.ownerName }}
+                      </a>
+                    } @else {
+                      <a [routerLink]="['/user', record.ownerId]" class="history-owner-link">
+                        <span class="history-avatar">{{ record.ownerName.charAt(0).toUpperCase() }}</span>
+                        {{ record.ownerName }}
+                      </a>
+                    }
+                  </div>
+                  <div class="history-dates">
+                    @if (record.status === 'current') {
+                      <span>Since {{ formatDate(record.startDate) }}</span>
+                    } @else {
+                      <span>{{ formatDate(record.startDate) }} - {{ formatDate(record.endDate) }}</span>
+                    }
+                  </div>
+                  @if (record.transferReason) {
+                    <div class="history-reason">
+                      {{ getReasonLabel(record.transferReason) }}
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <a routerLink="/profile" class="back-link">← Back to Profile</a>
+    </div>
+  }
+</div>

@@ -25,3 +25,37 @@ replay_pid*
 
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
+**/.kotlin/
+
+# IDE and tools
+.idea/
+.claude/
+*.iml
+.vscode/
+
+# Environment files with secrets
+.env
+**/.env
+*.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+dist/
+.angular/
+
+# System files
+.DS_Store
+Thumbs.db
+
+CLAUDE.md

@@ -1,0 +1,37 @@
+.navbar {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #667eea;
+  text-decoration: none;
+
+  span {
+    color: #764ba2;
+  }
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.user-greeting {
+  color: #333;
+  font-weight: 500;
+}

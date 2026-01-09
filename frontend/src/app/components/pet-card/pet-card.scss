@@ -1,0 +1,101 @@
+.pet-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .pet-emoji {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+  }
+
+  .pet-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pet-main-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pet-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+  }
+
+  .pet-sex {
+    font-size: 0.9rem;
+  }
+
+  .pet-species-badge {
+    display: inline-block;
+    background: #e0f2f1;
+    color: #059669;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .pet-age {
+    color: #666;
+    font-size: 0.85rem;
+  }
+
+  .pet-status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+
+    &.status-for_adoption {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    &.status-for_sale {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    &.status-needs_help {
+      background: #fef3c7;
+      color: #b45309;
+    }
+  }
+
+  .pet-secondary-info {
+    margin-top: 0.25rem;
+  }
+
+  .pet-breed {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .pet-bio {
+    color: #555;
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0 0;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}

@@ -1,0 +1,62 @@
+<div class="user-page">
+  @if (isLoading()) {
+    <div class="loading">Loading profile...</div>
+  } @else if (error()) {
+    <div class="card error-card">
+      <div class="error-message">{{ error() }}</div>
+      <a routerLink="/" class="btn btn-primary">Go Home</a>
+    </div>
+  } @else if (profile()) {
+    <div class="user-container">
+      <div class="card profile-card">
+        <div class="profile-header">
+          <span class="user-avatar">{{ profile()!.user.name.charAt(0).toUpperCase() }}</span>
+          <div class="user-info">
+            <h1>{{ profile()!.user.name }}</h1>
+            <p class="followers">{{ followerCount() }} followers</p>
+          </div>
+          @if (authService.isLoggedIn()) {
+            <button
+              class="btn follow-btn"
+              [class.btn-primary]="!isFollowing()"
+              [class.btn-outline]="isFollowing()"
+              (click)="toggleFollow()"
+            >
+              {{ isFollowing() ? 'Following' : 'Follow' }}
+            </button>
+          }
+        </div>
+
+        @if (profile()!.user.bio) {
+          <div class="bio-section">
+            <h3>About</h3>
+            <p>{{ profile()!.user.bio }}</p>
+          </div>
+        }
+      </div>
+
+      @if (profile()!.pets.length > 0) {
+        <div class="pets-section">
+          <h2>Pets</h2>
+          <div class="pets-grid">
+            @for (pet of profile()!.pets; track pet.id) {
+              <a [routerLink]="['/pet', pet.id]" class="card pet-card">
+                <span class="pet-emoji">{{ getSpeciesEmoji(pet.species) }}</span>
+                <div class="pet-info">
+                  <h3>{{ pet.name }}</h3>
+                  <p class="species">{{ pet.species }}</p>
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="card empty-pets">
+          <p>This user hasn't added any pets yet.</p>
+        </div>
+      }
+
+      <a routerLink="/discover" class="back-link">← Back to Discover</a>
+    </div>
+  }
+</div>

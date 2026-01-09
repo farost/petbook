@@ -1,0 +1,109 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
+
+// Color variables
+$primary-color: #667eea;
+$secondary-color: #764ba2;
+$gradient: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+
+// Button styles
+.btn {
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+
+  &-outline {
+    background: transparent;
+    border: 2px solid $primary-color;
+    color: $primary-color;
+
+    &:hover {
+      background: $primary-color;
+      color: white;
+    }
+
+    &-white {
+      border-color: white;
+      color: white;
+
+      &:hover {
+        background: white;
+        color: $primary-color;
+      }
+    }
+  }
+
+  &-primary {
+    background: $gradient;
+    color: white;
+    border: none;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba($primary-color, 0.4);
+    }
+  }
+
+  &-lg {
+    font-size: 1.2rem;
+    padding: 1rem 2.5rem;
+  }
+}
+
+// Form styles
+.form-group {
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+}
+
+// Card styles
+.card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+// Link styles
+a {
+  color: $primary-color;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

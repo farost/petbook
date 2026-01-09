@@ -1,0 +1,16 @@
+<nav class="navbar">
+  <a routerLink="/" class="logo">
+    Pet<span>book</span>
+  </a>
+  <div class="nav-buttons">
+    <a routerLink="/discover" class="btn btn-outline">Discover</a>
+    @if (authService.isLoggedIn()) {
+      <a routerLink="/feed" class="btn btn-primary">Feed</a>
+      <a routerLink="/profile" class="btn btn-outline">My Profile</a>
+      <button class="btn btn-outline" (click)="authService.logout()">Log Out</button>
+    } @else {
+      <a routerLink="/signin" class="btn btn-outline">Sign In</a>
+      <a routerLink="/signup" class="btn btn-primary">Sign Up</a>
+    }
+  </div>
+</nav>
